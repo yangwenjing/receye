@@ -2808,7 +2808,7 @@ public class Imgproc {
     public static void circle(Mat img, Point center, int radius, Scalar color, int thickness)
     {
         
-        circle_1(img.nativeObj, center.x, center.y, radius, color.val[0], color.val[1], color.val[2], color.val[3], thickness);
+        circle_1(img.nativeObj, (int)center.x, (int)center.y, radius, color.val[0], color.val[1], color.val[2], color.val[3], thickness);
         
         return;
     }
