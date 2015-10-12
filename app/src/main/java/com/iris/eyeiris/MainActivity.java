@@ -7,12 +7,12 @@ import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
@@ -25,11 +25,6 @@ import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.Button;
 import android.widget.TextView;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
-
 
 
 public class MainActivity extends Activity {
@@ -110,17 +105,25 @@ public class MainActivity extends Activity {
 
         procCannyCheck(); //边缘检测
         procSrc2CircleSrc(cannyMat); //hough检测
-        procHistgram();//先实现mask
+        getSubImg();//先实现mask和图片定位, 纹理提取和归一化
+        procHistgram();
 
-
-        //TODO: 纹理提取和归一化
 
 
 
 
     }
 
+    /**
+     * TODO: 计算直方图
+     */
     public void procHistgram() {
+
+
+
+    }
+
+    public void getSubImg() {
         try {
             Mat mask = new Mat(grayMat.rows(), grayMat.cols(), grayMat.type(), new Scalar(0,0,0));
             int outerRadius = (int)(radius*2);
@@ -129,17 +132,16 @@ public class MainActivity extends Activity {
             Imgproc.circle(mask, this.center, this.radius, new Scalar(0, 0, 0), Core.FILLED);
 
             Mat dist = new Mat();
-
             grayMat.copyTo(dist, mask);
+            Rect roi = new Rect(new Point(this.center.x-outerRadius, this.center.y-outerRadius),
+                    new Point(this.center.x+outerRadius, this.center.y+outerRadius));
 
+            Mat dist2 = new Mat(dist, roi);
 
-            Size size = new Size(outerRadius*2, outerRadius*2);
-            Mat dest = new Mat(size, grayMat.type());
-            Imgproc.getRectSubPix(dist, size, this.center, dest);
+            Bitmap newGrayBitmap = Bitmap.createBitmap(dist2.width(), dist2.height(), Config.RGB_565);
+            Utils.matToBitmap(dist2, newGrayBitmap);
 
-            Utils.matToBitmap(dist, grayBitmap);
-
-
+            grayBitmap = newGrayBitmap;
         }catch (Exception e) {
             Log.e(TAG, "直方图计算出错");
             Log.e(TAG, e.getMessage());
