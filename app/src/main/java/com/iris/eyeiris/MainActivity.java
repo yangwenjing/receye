@@ -8,6 +8,7 @@ import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
@@ -25,6 +26,8 @@ import android.widget.ImageView;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 
@@ -37,7 +40,9 @@ public class MainActivity extends Activity {
     ImageView imgLena;
     TextView OpCVversion;
     Mat grayMat = null;
-
+    Mat cannyMat = null;
+    Point center = null; //圆心
+    int radius = 0; //半径
 
     private static final String TAG = "MainActivity";
 
@@ -95,45 +100,74 @@ public class MainActivity extends Activity {
 
         srcBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
         grayBitmap = Bitmap.createBitmap(srcBitmap.getWidth(), srcBitmap.getHeight(), Config.RGB_565);
+
         Utils.bitmapToMat(srcBitmap, rgbMat);//convert original bitmap to Mat, R G B.
+        Imgproc.GaussianBlur(rgbMat, rgbMat, new Size(9, 9), 2, 2);
+
         Imgproc.cvtColor(rgbMat, grayMat, Imgproc.COLOR_RGB2GRAY);//rgbMat to gray grayMat
         Utils.matToBitmap(grayMat, grayBitmap); //convert mat to bitmap
         Log.i(TAG, "procSrc2Gray sucess...");
 
-//        procSrc2CircleSrc(); //hough检测
         procCannyCheck(); //边缘检测
+        procSrc2CircleSrc(cannyMat); //hough检测
+        procHistgram();//先实现mask
+
+
+        //TODO: 纹理提取和归一化
+
+
+
+
     }
 
-    private int iRound(double x){
-        int y;
-        if(x >= (int)x+0.5)
-        y = (int)x++;
-        else
-        y = (int)x;
-        return y;
+    public void procHistgram() {
+        try {
+            Mat mask = new Mat(grayMat.rows(), grayMat.cols(), grayMat.type(), new Scalar(0,0,0));
+            int outerRadius = (int)(radius*2);
+
+            Imgproc.circle(mask, this.center, outerRadius, new Scalar(255, 0, 0), Core.FILLED);
+            Imgproc.circle(mask, this.center, this.radius, new Scalar(0, 0, 0), Core.FILLED);
+
+            Mat dist = new Mat();
+
+            grayMat.copyTo(dist, mask);
+
+
+            Size size = new Size(outerRadius*2, outerRadius*2);
+            Mat dest = new Mat(size, grayMat.type());
+            Imgproc.getRectSubPix(dist, size, this.center, dest);
+
+            Utils.matToBitmap(dist, grayBitmap);
+
+
+        }catch (Exception e) {
+            Log.e(TAG, "直方图计算出错");
+            Log.e(TAG, e.getMessage());
+        } finally {
+            Log.i(TAG, "制作掩码结束");
+            Log.i(TAG, "radius:"+this.radius+", center (" +this.center.x+"," +this.center.y+")");
+        }
+
     }
 
     /*hough变换识别元*/
-    public void procSrc2CircleSrc() {
-       if(grayMat == null)
-           procSrc2Gray();
+    public void procSrc2CircleSrc(Mat mat) {
         /**
          * 已经获取了灰度图
          * Hough Circles
          */
-
         Mat circles = new Mat();
-//        Imgproc.HoughCircles(grayMat, circles, Imgproc.HOUGH_GRADIENT, 1,
-//                10, 140,
-//                120, 1, (int) (grayMat.rows() * 0.3));
 
         //TODO: 如何确定Hough变换的参数
-        Imgproc.HoughCircles(grayMat, circles, Imgproc.HOUGH_GRADIENT, 1,
-                20, //mindist
-                80, //canny
-                20, //迭代次数
-                (int)(grayMat.size().height*0.1),
-                (int)(grayMat.size().height*0.4));
+        int mindist = (int)(mat.size().height*0.1),
+                cannyThreld = 20,
+                roundTimes = 20;
+        Imgproc.HoughCircles(mat, circles, Imgproc.HOUGH_GRADIENT, 1,
+                mindist, //mindist
+                cannyThreld, //canny
+                 roundTimes, //迭代次数
+                (int)(mat.size().height*0.1),
+                (int)(mat.size().height*0.2));
 
         //
         Log.i(TAG, "circles" + circles.cols() +"," +circles.rows());
@@ -144,16 +178,25 @@ public class MainActivity extends Activity {
         {
             circles.get(0, i, circle);
             Point center = new Point();
-            center.x = iRound(circle[0]);
-            center.y = iRound(circle[1]);
-            Imgproc.circle(grayMat, center, (int) circle[2], new
-                    Scalar(255, 255, 0, 255), 4);
+            center.x = Math.round(circle[0]);
+            center.y = Math.round(circle[1]);
+
+            if(i==0) {
+                this.center = center;
+                this.radius = (int) circle[2];
+            }
+            Imgproc.circle(mat, center, (int) circle[2], new
+                    Scalar(255, 0, 255), 4);
+
+            Imgproc.circle(mat, center, (int) circle[2] + 50, new
+                    Scalar(255, 0, 255), 4);
         }
 
-        Utils.matToBitmap(grayMat,
+        Utils.matToBitmap(mat,
                 grayBitmap);
 
-        Log.i(TAG, "Hough circles sucess...");
+        Log.i(TAG, "Hough circles sucess...: mindist "+ mindist +" ,canny_threld "+cannyThreld +
+                " ,roundTimes" +roundTimes);
 
     }
 
@@ -162,19 +205,19 @@ public class MainActivity extends Activity {
             procSrc2Gray();
 
         /**
-         * TODO: Canny检测
          * 参数1， 低于threhold的点不作为边缘
          * 参数2，高于threhold的点不作为边缘
          */
 
         Mat edges = new Mat();
-        int thre1 = 1, thre2 = 300;
+        int thre1 = 1, thre2 = 80;
         Imgproc.Canny(grayMat, edges, thre1, thre2);
 
         Utils.matToBitmap(edges,
                 grayBitmap);
 
-        Log.i(TAG, "边缘检测完成3");
+        cannyMat = edges; //保存边缘检测的结果
+        Log.i(TAG, "边缘检测完成: thred1 +"+ thre1+",thred2"+thre2);
 
     }
 
