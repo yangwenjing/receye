@@ -111,15 +111,16 @@ public class MainActivity extends Activity {
         Utils.matToBitmap(grayMat, grayBitmap); //convert mat to bitmap
         Log.i(TAG, "procSrc2Gray sucess...");
 
-        procCannyCheck(grayMat, 1, 80, false); //边缘检测
-        procSrc2CircleSrc(cannyMat); //hough检测
-        getSubImg();//先实现mask和图片定位, 纹理提取和归一化
+//        procShapen(grayMat);
+//        procCannyCheck(grayMat, 0.1, 80, false); //边缘检测
+        procSrc2CircleSrc(grayMat); //hough检测
+        getSubImg(grayMat);//先实现mask和图片定位, 纹理提取和归一化
         procShapen(targetMat);
-        //再次边缘检测
-        procCannyCheck(targetMat, 0.1, 80, false);
-
-//        procContourlet();
-//        procHistgram(); //绘画处直方图, 直方图处理灰度图不行
+//        //再次边缘检测
+        procCannyCheck(targetMat, 0.01, 80, false);
+//
+        procContourlet(cannyMat);
+//        procHistgram();  //绘画处直方图, 直方图处理灰度图不行
 
     }
 
@@ -132,6 +133,8 @@ public class MainActivity extends Activity {
 
             Imgproc.filter2D(src, src, src.depth(), kernel);
 
+            grayMat = src;
+            targetMat = src;
             Utils.matToBitmap(src, grayBitmap);
 
         } catch (Exception e) {
@@ -140,15 +143,15 @@ public class MainActivity extends Activity {
 
     }
 
-    public void procContourlet() {
+    public void procContourlet(Mat src) {
         try {
             List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-            Imgproc.findContours(targetMat, contours, new Mat(),
+            Imgproc.findContours(src, contours, new Mat(),
                     Imgproc.RETR_LIST,
                     Imgproc.CHAIN_APPROX_NONE);
-            Imgproc.drawContours(targetMat, contours, -1, new Scalar(255, 0, 0), 2);
+            Imgproc.drawContours(src, contours, -1, new Scalar(255, 0, 0), 2);
 
-            Utils.matToBitmap(targetMat, grayBitmap);
+            Utils.matToBitmap(src, grayBitmap);
 
         } catch (Exception e) {
             Log.e(TAG, "procContourlet 出错!");
@@ -204,16 +207,16 @@ public class MainActivity extends Activity {
 
     }
 
-    public void getSubImg() {
+    public void getSubImg(Mat src) {
         try {
-            Mat mask = new Mat(grayMat.rows(), grayMat.cols(), grayMat.type(), new Scalar(0,0,0));
+            Mat mask = new Mat(src.rows(), src.cols(), src.type(), new Scalar(0,0,0));
             int outerRadius = (int)(radius*2);
 
             Imgproc.circle(mask, this.center, outerRadius, new Scalar(255, 0, 0), Core.FILLED);
             Imgproc.circle(mask, this.center, this.radius, new Scalar(0, 0, 0), Core.FILLED);
 
             Mat dist = new Mat();
-            grayMat.copyTo(dist, mask);
+            src.copyTo(dist, mask);
             Rect roi = new Rect(new Point(this.center.x-outerRadius, this.center.y-outerRadius),
                     new Point(this.center.x+outerRadius, this.center.y+outerRadius));
 
@@ -225,7 +228,7 @@ public class MainActivity extends Activity {
             grayMat = dist2;
             grayBitmap = newGrayBitmap;
         }catch (Exception e) {
-            Log.e(TAG, "直方图计算出错");
+            Log.e(TAG, "获取子图出错!");
             Log.e(TAG, e.getMessage());
         } finally {
             Log.i(TAG, "制作掩码结束");
@@ -244,18 +247,36 @@ public class MainActivity extends Activity {
 
         //TODO: 如何确定Hough变换的参数
         int mindist = (int)(mat.size().height*0.1),
-                cannyThreld = 20,
+                cannyThreld = 30,
                 roundTimes = 20;
-        Imgproc.HoughCircles(mat, circles, Imgproc.HOUGH_GRADIENT, 1,
-                mindist, //mindist
-                cannyThreld, //canny
-                 roundTimes, //迭代次数
-                (int)(mat.size().height*0.1),
-                (int)(mat.size().height*0.2));
+        int minRadius = (int)(mat.size().height*0.1);
+        int maxRadius = minRadius + 1, radius = minRadius*5;
+        int seed = (int)(mat.size().height*0.05);
+        boolean flag = false;
+        while (maxRadius < radius && maxRadius > mindist) {
+            Imgproc.HoughCircles(mat, circles, Imgproc.HOUGH_GRADIENT, 1,
+                    mindist, //mindist
+                    cannyThreld, //canny
+                    roundTimes, //迭代次数
+                    minRadius,
+                    maxRadius);
 
+            if(circles.cols() == 1) {
+                break;
+            } else if (circles.cols() > 1) {
+                if(flag == false) {
+                    seed = (int)(seed * 0.5);
+                    flag = true;
+                }
+                maxRadius = maxRadius - seed;
+            } else {
+                if (flag == true) {
+                    seed = (int)(seed*0.5);
+                }
+                maxRadius = maxRadius + seed;
+            }
+        }
         //
-        Log.i(TAG, "circles" + circles.cols() +"," +circles.rows());
-        Log.i(TAG, "circles" + circles.size().height +"," +circles.size().width);
         float circle[] = new float[3];
 
         for (int i = 0; i < circles.cols(); i++)
@@ -272,15 +293,13 @@ public class MainActivity extends Activity {
             Imgproc.circle(mat, center, (int) circle[2], new
                     Scalar(255, 0, 255), 4);
 
-            Imgproc.circle(mat, center, (int) circle[2] + 50, new
-                    Scalar(255, 0, 255), 4);
         }
 
         Utils.matToBitmap(mat,
                 grayBitmap);
 
         Log.i(TAG, "Hough circles sucess...: mindist "+ mindist +" ,canny_threld "+cannyThreld +
-                " ,roundTimes" +roundTimes);
+                " ,roundTimes" +roundTimes+ ", circles" +circles.cols());
 
     }
 
