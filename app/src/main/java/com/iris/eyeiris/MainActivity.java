@@ -5,7 +5,11 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfFloat;
+import org.opencv.core.MatOfInt;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
@@ -26,6 +30,9 @@ import android.widget.ImageView;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class MainActivity extends Activity {
     Button btnProcess;
@@ -36,6 +43,7 @@ public class MainActivity extends Activity {
     TextView OpCVversion;
     Mat grayMat = null;
     Mat cannyMat = null;
+    Mat targetMat;
     Point center = null; //圆心
     int radius = 0; //半径
 
@@ -103,23 +111,96 @@ public class MainActivity extends Activity {
         Utils.matToBitmap(grayMat, grayBitmap); //convert mat to bitmap
         Log.i(TAG, "procSrc2Gray sucess...");
 
-        procCannyCheck(); //边缘检测
+        procCannyCheck(grayMat, 1, 80, false); //边缘检测
         procSrc2CircleSrc(cannyMat); //hough检测
         getSubImg();//先实现mask和图片定位, 纹理提取和归一化
-        procHistgram();
+        procShapen(targetMat);
+        //再次边缘检测
+        procCannyCheck(targetMat, 0.1, 80, false);
 
-
-
-
+//        procContourlet();
+//        procHistgram(); //绘画处直方图, 直方图处理灰度图不行
 
     }
 
+    public void procShapen(Mat src) {
+        try {
+            Mat kernel = new Mat(3, 3, CvType.CV_32F, new Scalar(-1));
+
+            double [] arr = {8.9};
+            kernel.put(1, 1, arr);
+
+            Imgproc.filter2D(src, src, src.depth(), kernel);
+
+            Utils.matToBitmap(src, grayBitmap);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void procContourlet() {
+        try {
+            List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+            Imgproc.findContours(targetMat, contours, new Mat(),
+                    Imgproc.RETR_LIST,
+                    Imgproc.CHAIN_APPROX_NONE);
+            Imgproc.drawContours(targetMat, contours, -1, new Scalar(255, 0, 0), 2);
+
+            Utils.matToBitmap(targetMat, grayBitmap);
+
+        } catch (Exception e) {
+            Log.e(TAG, "procContourlet 出错!");
+            Log.e(TAG, e.getMessage());
+            e.printStackTrace();
+        } finally {
+            Log.i(TAG, "procContourlet 完成!");
+        }
+    }
+
     /**
-     * TODO: 计算直方图
+     * 计算直方图
+     * 绘制成功，但是为什么直方图的值那么小呢？
+     * 因为全市灰度图
      */
     public void procHistgram() {
 
+        MatOfInt channels = new MatOfInt(0);
+        Mat hist = new Mat();
+        MatOfInt histSize = new MatOfInt(256);
+        MatOfFloat range = new MatOfFloat(0, 256);
+        List<Mat> mats = new ArrayList<Mat>();
 
+        mats.add(targetMat);
+        Log.i(TAG, "Type:" + targetMat.type());
+
+        Imgproc.calcHist(mats, channels, Mat.ones(targetMat.size(), targetMat.type()),
+                hist,
+                histSize,
+                range
+        );
+
+        int height =256, scale =3;
+        Mat histImg = Mat.zeros(height, height*scale, grayMat.type());
+
+        Core.MinMaxLocResult locRes = Core.minMaxLoc(hist);
+        for(int i=0; i<256; i++) {
+            float[] value = new float[1];
+
+            hist.get(0, i, value);
+//            int drawHeight = (int)Math.round(value[0]*height/(locRes.maxVal-locRes.minVal));
+            int drawHeight = (int)Math.round(value[0]*height/(locRes.maxVal-locRes.minVal));
+
+
+
+            Imgproc.rectangle(histImg, new Point(i*2+100, drawHeight-1),
+                    new Point((i+1)*2+100, 0), new Scalar(255, 0, 255));
+        }
+
+        Bitmap histBitmap = Bitmap.createBitmap(histImg.width(), histImg.height(), Config.RGB_565);
+        Utils.matToBitmap(histImg, histBitmap);
+        grayBitmap = histBitmap;
 
     }
 
@@ -140,7 +221,8 @@ public class MainActivity extends Activity {
 
             Bitmap newGrayBitmap = Bitmap.createBitmap(dist2.width(), dist2.height(), Config.RGB_565);
             Utils.matToBitmap(dist2, newGrayBitmap);
-
+            targetMat = dist2;
+            grayMat = dist2;
             grayBitmap = newGrayBitmap;
         }catch (Exception e) {
             Log.e(TAG, "直方图计算出错");
@@ -202,9 +284,7 @@ public class MainActivity extends Activity {
 
     }
 
-    public void procCannyCheck() {
-        if(grayMat == null)
-            procSrc2Gray();
+    public void procCannyCheck(Mat src, double thred1, double thred2, boolean L2gradient) {
 
         /**
          * 参数1， 低于threhold的点不作为边缘
@@ -212,14 +292,13 @@ public class MainActivity extends Activity {
          */
 
         Mat edges = new Mat();
-        int thre1 = 1, thre2 = 80;
-        Imgproc.Canny(grayMat, edges, thre1, thre2);
+        Imgproc.Canny(src, edges, thred1, thred2);
 
         Utils.matToBitmap(edges,
                 grayBitmap);
 
         cannyMat = edges; //保存边缘检测的结果
-        Log.i(TAG, "边缘检测完成: thred1 +"+ thre1+",thred2"+thre2);
+        Log.i(TAG, "边缘检测完成: thred1 +"+ thred1+",thred2"+thred2);
 
     }
 
