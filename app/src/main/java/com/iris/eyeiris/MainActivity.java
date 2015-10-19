@@ -30,6 +30,9 @@ import android.widget.ImageView;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.iris.eyeiris.handlers.LocateHandler;
+import com.iris.eyeiris.handlers.SampleLocateHander;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -112,14 +115,20 @@ public class MainActivity extends Activity {
         Log.i(TAG, "procSrc2Gray sucess...");
 
 //        procShapen(grayMat);
-//        procCannyCheck(grayMat, 0.1, 80, false); //边缘检测
-        procSrc2CircleSrc(grayMat); //hough检测
-        getSubImg(grayMat);//先实现mask和图片定位, 纹理提取和归一化
-        procShapen(targetMat);
-//        //再次边缘检测
-        procCannyCheck(targetMat, 0.01, 80, false);
-//
-        procContourlet(cannyMat);
+////        procCannyCheck(grayMat, 0.1, 80, false); //边缘检测
+//        procSrc2CircleSrc(grayMat); //hough检测
+        LocateHandler handler = new SampleLocateHander();
+        Mat resMat = handler.handleLocateIris(grayMat);
+
+        Bitmap resBitmap = Bitmap.createBitmap(resMat.width(), resMat.height(), Config.RGB_565);
+        Utils.matToBitmap(resMat, resBitmap); //convert mat to bitmap
+        grayBitmap = resBitmap;
+//        getSubImg(grayMat);//先实现mask和图片定位, 纹理提取和归一化
+//        procShapen(targetMat);
+////        //再次边缘检测
+//        procCannyCheck(targetMat, 0.01, 80, false);
+////
+//        procContourlet(cannyMat);
 //        procHistgram();  //绘画处直方图, 直方图处理灰度图不行
 
     }
