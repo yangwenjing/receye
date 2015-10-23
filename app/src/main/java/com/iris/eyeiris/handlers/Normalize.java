@@ -7,7 +7,7 @@ import org.opencv.core.Mat;
  */
 public class Normalize {
     public static Mat normalize(Mat src, Mat circles) {
-        //争强和归一化
+        //强和归一化
         return null;
     }
 }

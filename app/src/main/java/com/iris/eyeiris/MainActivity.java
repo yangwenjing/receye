@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
 
     private static boolean flag = true;
     private static boolean isFirst = true;                      // Grey
-    
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

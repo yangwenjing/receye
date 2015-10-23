@@ -9,10 +9,10 @@ extern "C" {
 #endif
 /*
  * Class:     com_iris_eyeiris_MainActivity
- * Method:    sayHi
- * Signature: ()Ljava/lang/String;
+ * Method:    hello
+ * Signature: ()V
  */
-JNIEXPORT jstring JNICALL Java_com_iris_eyeiris_MainActivity_sayHi
+JNIEXPORT void JNICALL Java_com_iris_eyeiris_MainActivity_hello
   (JNIEnv *, jobject);
 
 #ifdef __cplusplus
