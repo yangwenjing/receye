@@ -58,8 +58,6 @@ public class MainActivity extends Activity {
 
     private static final String TAG = "MainActivity";
 
-    private static final String TAG_HF = "HoughCircle";
-
     private static boolean flag = true;
     private static boolean isFirst = true;                      // Grey
 
@@ -80,39 +78,6 @@ public class MainActivity extends Activity {
         btnProcess.setOnClickListener(new ProcessClickListener());
     }
 
-    class UserAdapter extends ArrayAdapter<User> {
-        private int mResourceId;
-
-        public UserAdapter(Context context, int textViewResourceId) {
-            super(context, textViewResourceId);
-            mResourceId = textViewResourceId;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            User user = getItem(position);
-            LayoutInflater inflater = getLayoutInflater();
-            View view = inflater.inflate(mResourceId, null);
-            TextView nameTv = (TextView) view.findViewById(R.id.name);
-
-            nameTv.setText(user.getName());
-            return view;
-        }
-    }
-
-
-//    class User {
-//        private String name;
-//
-//        public User() {
-//            this.name = "lalala";
-//        }
-//
-//        public String getName() {
-//            return this.name;
-//        }
-//
-//    }
     private List<String> getData() {
         List data = new ArrayList<String>();
         data.add("test2");
@@ -157,38 +122,8 @@ public class MainActivity extends Activity {
     }
 
     /*将图片转为灰度图*/
-    public void procSrc2Gray(){
-        Mat rgbMat = new Mat();
-        grayMat = new Mat();
 
-        srcBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
-        grayBitmap = Bitmap.createBitmap(srcBitmap.getWidth(), srcBitmap.getHeight(), Config.RGB_565);
 
-        Utils.bitmapToMat(srcBitmap, rgbMat);//convert original bitmap to Mat, R G B.
-        Imgproc.GaussianBlur(rgbMat, rgbMat, new Size(9, 9), 2, 2);
-
-        Imgproc.cvtColor(rgbMat, grayMat, Imgproc.COLOR_RGB2GRAY);//rgbMat to gray grayMat
-        Utils.matToBitmap(grayMat, grayBitmap); //convert mat to bitmap
-        Log.i(TAG, "procSrc2Gray sucess...");
-
-//        procShapen(grayMat);
-////        procCannyCheck(grayMat, 0.1, 80, false); //边缘检测
-//        procSrc2CircleSrc(grayMat); //hough检测
-        LocateHandler handler = new SampleLocateHander();
-        Mat resMat = handler.handleLocateIris(grayMat);
-
-        Bitmap resBitmap = Bitmap.createBitmap(resMat.width(), resMat.height(), Config.RGB_565);
-        Utils.matToBitmap(resMat, resBitmap); //convert mat to bitmap
-        grayBitmap = resBitmap;
-//        getSubImg(grayMat);//先实现mask和图片定位, 纹理提取和归一化
-//        procShapen(targetMat);
-////        //再次边缘检测
-//        procCannyCheck(targetMat, 0.01, 80, false);
-////
-//        procContourlet(cannyMat);
-//        procHistgram();  //绘画处直方图, 直方图处理灰度图不行
-
-    }
 
     public void procShapen(Mat src) {
         try {
