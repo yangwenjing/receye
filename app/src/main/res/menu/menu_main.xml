@@ -2,4 +2,10 @@
     xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
     <item android:id="@+id/action_settings" android:title="@string/action_settings"
         android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_preproc" android:title="@string/action_preproc"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_featureproc" android:title="@string/action_featureproc"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_matchproc" android:title="@string/action_matchproc"
+        android:orderInCategory="100" android:showAsAction="never" />
 </menu>

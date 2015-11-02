@@ -17,17 +17,23 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.Adapter;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.iris.eyeiris.handlers.LocateHandler;
@@ -65,8 +71,58 @@ public class MainActivity extends Activity {
 
         initUI();
 
+        ListView lv = (ListView) findViewById(R.id.results);
+
+        lv.setAdapter(new ArrayAdapter<String>(this,
+                android.R.layout.simple_expandable_list_item_1,
+                getData()));
+
         btnProcess.setOnClickListener(new ProcessClickListener());
     }
+
+    class UserAdapter extends ArrayAdapter<User> {
+        private int mResourceId;
+
+        public UserAdapter(Context context, int textViewResourceId) {
+            super(context, textViewResourceId);
+            mResourceId = textViewResourceId;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            User user = getItem(position);
+            LayoutInflater inflater = getLayoutInflater();
+            View view = inflater.inflate(mResourceId, null);
+            TextView nameTv = (TextView) view.findViewById(R.id.name);
+
+            nameTv.setText(user.getName());
+            return view;
+        }
+    }
+
+
+//    class User {
+//        private String name;
+//
+//        public User() {
+//            this.name = "lalala";
+//        }
+//
+//        public String getName() {
+//            return this.name;
+//        }
+//
+//    }
+    private List<String> getData() {
+        List data = new ArrayList<String>();
+        data.add("test2");
+        data.add("test3");
+        data.add("test4");
+        data.add("test1");
+
+        return data;
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

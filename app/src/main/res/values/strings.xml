@@ -5,4 +5,7 @@
     <string name="action_settings">Settings</string>
     <string name="username">huhu</string>
     <string name="change">变为灰度图</string>
+    <string name="action_preproc">虹膜初始化</string>
+    <string name="action_matchproc">特征比对</string>
+    <string name="action_featureproc">特征提取</string>
 </resources>
