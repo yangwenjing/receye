@@ -5,56 +5,41 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfFloat;
-import org.opencv.core.MatOfInt;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.Point;
-import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
-import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
-import android.widget.Adapter;
 import android.widget.ArrayAdapter;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
-import com.iris.eyeiris.handlers.LocateHandler;
-import com.iris.eyeiris.handlers.SampleLocateHander;
+import com.iris.eyeiris.adapters.ImagesDespAdapter;
+import com.iris.eyeiris.entities.ImageDesp;
+import com.iris.eyeiris.handlers.Utility;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Map;
 
 public class MainActivity extends Activity {
     Button btnProcess;
     Bitmap srcBitmap;
-    Bitmap grayBitmap;
-    Bitmap MaskBitmap;
     ImageView imgLena;
-    TextView OpCVversion;
     Mat grayMat = null;
-    Mat cannyMat = null;
-    Mat targetMat;
-    Point center = null; //圆心
-    int radius = 0; //半径
+
+    List<ImageDesp> imageResults;
 
     private static final String TAG = "MainActivity";
 
@@ -69,25 +54,17 @@ public class MainActivity extends Activity {
 
         initUI();
 
-        ListView lv = (ListView) findViewById(R.id.results);
 
-        lv.setAdapter(new ArrayAdapter<String>(this,
-                android.R.layout.simple_expandable_list_item_1,
-                getData()));
+        loadImages();
 
         btnProcess.setOnClickListener(new ProcessClickListener());
     }
 
-    private List<String> getData() {
-        List data = new ArrayList<String>();
-        data.add("test2");
-        data.add("test3");
-        data.add("test4");
-        data.add("test1");
+    private void loadImages() {
+        GridView lv = (GridView) findViewById(R.id.results);
 
-        return data;
+        lv.setAdapter(new ImagesDespAdapter(this, R.layout.image_desc_view, imageResults));
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -113,218 +90,15 @@ public class MainActivity extends Activity {
 
     public void initUI(){
         btnProcess = (Button)findViewById(R.id.button);
-        imgLena = (ImageView)findViewById(R.id.imageView);
-//        OpCVversion = (TextView)findViewById(R.id.textView3);
+        srcBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
 
+        imageResults = new ArrayList<ImageDesp>();
 
+        imageResults.add(new ImageDesp(srcBitmap, "原图")); //加入原图
         Log.i(TAG, "initUI sucess...");
 
     }
 
-    /*将图片转为灰度图*/
-
-
-
-    public void procShapen(Mat src) {
-        try {
-            Mat kernel = new Mat(3, 3, CvType.CV_32F, new Scalar(-1));
-
-            double [] arr = {8.9};
-            kernel.put(1, 1, arr);
-
-            Imgproc.filter2D(src, src, src.depth(), kernel);
-
-            grayMat = src;
-            targetMat = src;
-            Utils.matToBitmap(src, grayBitmap);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    public void procContourlet(Mat src) {
-        try {
-            List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-            Imgproc.findContours(src, contours, new Mat(),
-                    Imgproc.RETR_LIST,
-                    Imgproc.CHAIN_APPROX_NONE);
-            Imgproc.drawContours(src, contours, -1, new Scalar(255, 0, 0), 2);
-
-            Utils.matToBitmap(src, grayBitmap);
-
-        } catch (Exception e) {
-            Log.e(TAG, "procContourlet 出错!");
-            Log.e(TAG, e.getMessage());
-            e.printStackTrace();
-        } finally {
-            Log.i(TAG, "procContourlet 完成!");
-        }
-    }
-
-    /**
-     * 计算直方图
-     * 绘制成功，但是为什么直方图的值那么小呢？
-     * 因为全市灰度图
-     */
-    public void procHistgram() {
-
-        MatOfInt channels = new MatOfInt(0);
-        Mat hist = new Mat();
-        MatOfInt histSize = new MatOfInt(256);
-        MatOfFloat range = new MatOfFloat(0, 256);
-        List<Mat> mats = new ArrayList<Mat>();
-
-        mats.add(targetMat);
-        Log.i(TAG, "Type:" + targetMat.type());
-
-        Imgproc.calcHist(mats, channels, Mat.ones(targetMat.size(), targetMat.type()),
-                hist,
-                histSize,
-                range
-        );
-
-        int height =256, scale =3;
-        Mat histImg = Mat.zeros(height, height*scale, grayMat.type());
-
-        Core.MinMaxLocResult locRes = Core.minMaxLoc(hist);
-        for(int i=0; i<256; i++) {
-            float[] value = new float[1];
-
-            hist.get(0, i, value);
-//            int drawHeight = (int)Math.round(value[0]*height/(locRes.maxVal-locRes.minVal));
-            int drawHeight = (int)Math.round(value[0]*height/(locRes.maxVal-locRes.minVal));
-
-
-
-            Imgproc.rectangle(histImg, new Point(i*2+100, drawHeight-1),
-                    new Point((i+1)*2+100, 0), new Scalar(255, 0, 255));
-        }
-
-        Bitmap histBitmap = Bitmap.createBitmap(histImg.width(), histImg.height(), Config.RGB_565);
-        Utils.matToBitmap(histImg, histBitmap);
-        grayBitmap = histBitmap;
-
-    }
-
-    public void getSubImg(Mat src) {
-        try {
-            Mat mask = new Mat(src.rows(), src.cols(), src.type(), new Scalar(0,0,0));
-            int outerRadius = (int)(radius*2);
-
-            Imgproc.circle(mask, this.center, outerRadius, new Scalar(255, 0, 0), Core.FILLED);
-            Imgproc.circle(mask, this.center, this.radius, new Scalar(0, 0, 0), Core.FILLED);
-
-            Mat dist = new Mat();
-            src.copyTo(dist, mask);
-            Rect roi = new Rect(new Point(this.center.x-outerRadius, this.center.y-outerRadius),
-                    new Point(this.center.x+outerRadius, this.center.y+outerRadius));
-
-            Mat dist2 = new Mat(dist, roi);
-
-            Bitmap newGrayBitmap = Bitmap.createBitmap(dist2.width(), dist2.height(), Config.RGB_565);
-            Utils.matToBitmap(dist2, newGrayBitmap);
-            targetMat = dist2;
-            grayMat = dist2;
-            grayBitmap = newGrayBitmap;
-        }catch (Exception e) {
-            Log.e(TAG, "获取子图出错!");
-            Log.e(TAG, e.getMessage());
-        } finally {
-            Log.i(TAG, "制作掩码结束");
-            Log.i(TAG, "radius:"+this.radius+", center (" +this.center.x+"," +this.center.y+")");
-        }
-
-    }
-
-    /*hough变换识别元*/
-    public void procSrc2CircleSrc(Mat mat) {
-        /**
-         * 已经获取了灰度图
-         * Hough Circles
-         */
-        Mat circles = new Mat();
-
-        //TODO: 如何确定Hough变换的参数
-        int mindist = (int)(mat.size().height*0.1),
-                cannyThreld = 30,
-                roundTimes = 20;
-        int minRadius = (int)(mat.size().height*0.1);
-        int maxRadius = minRadius + 1, radius = minRadius*5;
-        int seed = (int)(mat.size().height*0.05);
-        boolean flag = false;
-        while (maxRadius < radius && maxRadius > mindist) {
-            Imgproc.HoughCircles(mat, circles, Imgproc.HOUGH_GRADIENT, 1,
-                    mindist, //mindist
-                    cannyThreld, //canny
-                    roundTimes, //迭代次数
-                    minRadius,
-                    maxRadius);
-
-            if(circles.cols() == 1) {
-                break;
-            } else if (circles.cols() > 1) {
-                if(flag == false) {
-                    seed = (int)(seed * 0.5);
-                    flag = true;
-                }
-                maxRadius = maxRadius - seed;
-            } else {
-                if (flag == true) {
-                    seed = (int)(seed*0.5);
-                }
-                maxRadius = maxRadius + seed;
-            }
-        }
-        //
-        float circle[] = new float[3];
-
-        for (int i = 0; i < circles.cols(); i++)
-        {
-            circles.get(0, i, circle);
-            Point center = new Point();
-            center.x = Math.round(circle[0]);
-            center.y = Math.round(circle[1]);
-
-            if(i==0) {
-                this.center = center;
-                this.radius = (int) circle[2];
-            }
-            Imgproc.circle(mat, center, (int) circle[2], new
-                    Scalar(255, 0, 255), 4);
-
-        }
-
-        Utils.matToBitmap(mat,
-                grayBitmap);
-
-        Log.i(TAG, "Hough circles sucess...: mindist "+ mindist +" ,canny_threld "+cannyThreld +
-                " ,roundTimes" +roundTimes+ ", circles" +circles.cols());
-
-    }
-
-    public void procCannyCheck(Mat src, double thred1, double thred2, boolean L2gradient) {
-
-        /**
-         * 参数1， 低于threhold的点不作为边缘
-         * 参数2，高于threhold的点不作为边缘
-         */
-
-        Mat edges = new Mat();
-        Imgproc.Canny(src, edges, thred1, thred2);
-
-        Utils.matToBitmap(edges,
-                grayBitmap);
-
-        cannyMat = edges; //保存边缘检测的结果
-        Log.i(TAG, "边缘检测完成: thred1 +"+ thred1+",thred2"+thred2);
-
-    }
-
-    /**
-     * 监听点击变为灰度图的事件
-     */
     private class ProcessClickListener implements OnClickListener {
 
         @Override
@@ -332,20 +106,97 @@ public class MainActivity extends Activity {
             // TODO Auto-generated method stub
             if(isFirst)
             {
-                procSrc2Gray();
+                process();
                 isFirst = false;
             }
-            if(flag){
-                imgLena.setImageBitmap(grayBitmap);
-                btnProcess.setText("Origin");
-                flag = false;
-            }
-            else{
-                imgLena.setImageBitmap(srcBitmap);
-                btnProcess.setText("Grey");
-                flag = true;
-            }
         }
+
+    }
+
+    private void process() {
+        try {
+
+            grayMat = Utility.procSrc2Gray(srcBitmap);
+            Bitmap bitmap = Bitmap.createBitmap(grayMat.width(), grayMat.height(), Config.RGB_565);
+
+            Utils.matToBitmap(grayMat, bitmap);
+            imageResults.add(new ImageDesp(bitmap, "灰度图"));
+
+            /**
+             * 锐化
+             */
+
+            Mat shapMat = Utility.procShapen(grayMat);
+            Bitmap bitmap2 = Bitmap.createBitmap(shapMat.width(), shapMat.height(), Config.RGB_565);
+            Utils.matToBitmap(shapMat, bitmap2);
+            imageResults.add(new ImageDesp(bitmap2, "锐化图片"));
+
+            Mat threMat = Utility.procThreshold(grayMat, 0.5);
+            Bitmap bitmap3 = Bitmap.createBitmap(shapMat.width(), shapMat.height(), Config.RGB_565);
+            Utils.matToBitmap(threMat, bitmap3);
+            imageResults.add(new ImageDesp(bitmap3, "二值化图像"));
+
+
+            Mat threMat2 = Utility.procThreshold(grayMat, 1);
+            Bitmap bitmap4 = Bitmap.createBitmap(shapMat.width(), shapMat.height(), Config.RGB_565);
+            Utils.matToBitmap(threMat2, bitmap4);
+            imageResults.add(new ImageDesp(bitmap4, "二值化图像2"));
+
+
+            Mat edges = Utility.procCannyCheck(threMat, 0.3, 20, false);
+            Bitmap bitmap5 = Bitmap.createBitmap(edges.width(), edges.height(), Config.RGB_565);
+            Utils.matToBitmap(edges, bitmap5);
+            imageResults.add(new ImageDesp(bitmap5, "边缘检测图像"));
+
+
+
+            Mat edges2 = Utility.procCannyCheck(threMat, 0.5, 1, false);
+            Bitmap bitmap6 = Bitmap.createBitmap(edges.width(), edges.height(), Config.RGB_565);
+            Utils.matToBitmap(edges2, bitmap6);
+            imageResults.add(new ImageDesp(bitmap6, "边缘检测图像"));
+
+            Mat circles = Utility.procSrc2CircleSrc(edges);
+            Mat subMat1 = Utility.getSubImg(grayMat, circles);
+            Bitmap bitmap7 = Bitmap.createBitmap(subMat1.width(), subMat1.height(), Config.RGB_565);
+            Utils.matToBitmap(subMat1, bitmap7);
+            imageResults.add(new ImageDesp(bitmap7, "Hough圆形检测"));
+
+
+
+            circles = Utility.procSrc2CircleSrc(edges2);
+            Mat subMat2 = Utility.getSubImg(grayMat, circles);
+            Bitmap bitmap8 = Bitmap.createBitmap(subMat2.width(), subMat2.height(), Config.RGB_565);
+            Utils.matToBitmap(subMat2, bitmap8);
+            imageResults.add(new ImageDesp(bitmap8, "Hough圆形检测,边缘检测"));
+
+
+            Mat polarMat = Utility.procLinearPolar(subMat2);
+
+            Bitmap bitmap9 = Bitmap.createBitmap(polarMat.width(), polarMat.height(), Config.RGB_565);
+            Utils.matToBitmap(polarMat, bitmap9);
+            imageResults.add(new ImageDesp(bitmap9, "图像展开"));
+
+
+//            Mat descript = Utility.procSurfFeature2d(subMat2);
+//            Bitmap bitmap9 = Bitmap.createBitmap(descript.width(),
+//                    descript.height(), Config.RGB_565);
+//            Utils.matToBitmap(descript, bitmap9);
+//            imageResults.add(new ImageDesp(bitmap9, "Hough圆形检测,边缘检测"));
+
+            /**
+             * 截取目标区域
+             */
+
+
+            Log.i(TAG, "输出图像" + imageResults.size());
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            Log.i(TAG, "整体处理完成");
+            loadImages();
+        }
+
 
     }
 

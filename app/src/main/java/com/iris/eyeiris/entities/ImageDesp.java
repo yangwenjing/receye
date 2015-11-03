@@ -25,5 +25,8 @@ public class ImageDesp {
     private Bitmap image;
     private String descript;
 
-
+    public ImageDesp(Bitmap image, String descript) {
+        this.image = image;
+        this.descript = descript;
+    }
 }
