@@ -31,7 +31,6 @@ import com.iris.eyeiris.handlers.Utility;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class MainActivity extends Activity {
     Button btnProcess;
@@ -112,6 +111,7 @@ public class MainActivity extends Activity {
         }
 
     }
+
 
     private void process() {
         try {
@@ -207,6 +207,10 @@ public class MainActivity extends Activity {
             // TODO Auto-generated method stub
             switch (status) {
                 case BaseLoaderCallback.SUCCESS:
+
+                    System.loadLibrary("");
+
+
                     Log.i(TAG, "Load success");
                     break;
                 default:
