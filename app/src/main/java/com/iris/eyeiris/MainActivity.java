@@ -207,10 +207,6 @@ public class MainActivity extends Activity {
             // TODO Auto-generated method stub
             switch (status) {
                 case BaseLoaderCallback.SUCCESS:
-
-                    System.loadLibrary("");
-
-
                     Log.i(TAG, "Load success");
                     break;
                 default:
@@ -230,7 +226,6 @@ public class MainActivity extends Activity {
         isFirst = true;
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
         Log.i(TAG, "onResume sucess load OpenCV...");
-
     }
 
 }
