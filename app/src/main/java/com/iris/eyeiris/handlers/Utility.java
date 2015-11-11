@@ -111,13 +111,32 @@ public class Utility {
     public static Mat procLinearPolar(Mat src) {
         try{
             Mat dist = new Mat();
-            Imgproc.linearPolar(src, dist,new Point(src.width()/2.0, src.height()/2.0), src.width()/2.0,
+            Imgproc.linearPolar(src, dist,
+                    new Point(src.width() / 2.0, src.height() / 2.0),
+                    src.width() / 2.0,
                     Imgproc.WARP_FILL_OUTLIERS);
 
             return dist;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public static Mat procLogPolar(Mat src) {
+        try{
+            Mat dist = new Mat();
+            Imgproc.logPolar(src, dist,
+                    new Point(src.width() / 2.0, src.height() / 2.0),
+                    src.width() / 2.0,
+                    Imgproc.INTER_LINEAR+Imgproc.WARP_FILL_OUTLIERS);
+
+            return dist;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            Log.i(TAG, "Log polar 处理完成");
         }
     }
 
@@ -189,6 +208,46 @@ public class Utility {
 //        grayBitmap = histBitmap;
 //
 //    }
+
+
+    public static List<Mat> procGabor(Mat src, double sigma, double gamma, int ktype) {
+
+        try {
+            List<Mat> output = new ArrayList<Mat>();
+            Size size = new Size(9,9);
+
+            double [] mu = {0, 1, 2};
+            double [] nu = {0, 1, 2};
+
+            for (int i=0;i<mu.length; i++) {
+                for(int j=0; j<nu.length; j++) {
+                    Mat gaborMat, outMat = new Mat();
+                    gaborMat = Imgproc.getGaborKernel(
+                            size,
+                            sigma,
+                            mu[i]*Math.PI/8,
+                            nu[j],
+                            gamma,
+                            0.0f,
+                            ktype);
+                    Imgproc.filter2D(src, outMat, -1, gaborMat);
+                    output.add(outMat);
+                }
+            }
+
+
+//            Imgproc.filter2D(src, output, -1, gaborKernel);
+
+            return output;
+        } catch (Exception e) {
+            Log.e(TAG, "出错");
+            e.printStackTrace();
+            return null;
+
+        } finally {
+            Log.i(TAG, "Gabor滤波器完成");
+        }
+    }
 
     public static Mat dilate(Mat src, int sizePara) {
         try {

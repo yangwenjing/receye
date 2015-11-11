@@ -5,6 +5,7 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 import android.app.Activity;
@@ -177,6 +178,25 @@ public class MainActivity extends Activity {
             imageResults.add(new ImageDesp(bitmap9, "图像展开"));
 
 
+            List<Mat> gaborMatList = Utility.procGabor(polarMat, 2*Math.PI, Math.PI*(0.5+0.125), CvType.CV_32F);
+
+//            for(Mat mat: gaborMatList){
+                Bitmap bitmap10 = Bitmap.createBitmap(gaborMatList.get(1).width(),
+                        gaborMatList.get(1).height(),
+                        Config.RGB_565);
+                Utils.matToBitmap(gaborMatList.get(2), bitmap10);
+                imageResults.add(new ImageDesp(bitmap10, "Gabor"));
+//            }
+
+
+
+//
+//            Mat logPolarMat = Utility.procLogPolar(grayMat);
+//
+//            Bitmap bitmap10 = Bitmap.createBitmap(logPolarMat.width(), logPolarMat.height(), Config.RGB_565);
+//            Utils.matToBitmap(logPolarMat, bitmap10);
+//            imageResults.add(new ImageDesp(bitmap10, "LogPolar图像展开"));
+
 //            Mat descript = Utility.procSurfFeature2d(subMat2);
 //            Bitmap bitmap9 = Bitmap.createBitmap(descript.width(),
 //                    descript.height(), Config.RGB_565);
@@ -193,7 +213,7 @@ public class MainActivity extends Activity {
         }catch (Exception e) {
             e.printStackTrace();
         } finally {
-            Log.i(TAG, "整体处理完成");
+            Log.i(TAG, "Gabor整体处理完成");
             loadImages();
         }
 
