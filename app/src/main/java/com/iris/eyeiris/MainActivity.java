@@ -7,6 +7,7 @@ import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
@@ -144,49 +145,63 @@ public class MainActivity extends Activity {
             imageResults.add(new ImageDesp(bitmap4, "二值化图像2"));
 
 
-            Mat edges = Utility.procCannyCheck(threMat, 0.3, 20, false);
-            Bitmap bitmap5 = Bitmap.createBitmap(edges.width(), edges.height(), Config.RGB_565);
-            Utils.matToBitmap(edges, bitmap5);
-            imageResults.add(new ImageDesp(bitmap5, "边缘检测图像"));
+            Mat threMat3 = Utility.procAdaptiveThreshold(shapMat);
+            Bitmap threBitmap = Bitmap.createBitmap(shapMat.width(), shapMat.height(), Config.RGB_565);
+            Utils.matToBitmap(threMat3, threBitmap);
+            imageResults.add(new ImageDesp(threBitmap, "自适应二值化图像"));
+
+
+            Mat hist = Utility.procHistogram(grayMat);
+            Bitmap histBitmap = Bitmap.createBitmap(hist.width(), hist.height(), Config.RGB_565);
+            Utils.matToBitmap(hist, histBitmap);
+            imageResults.add(new ImageDesp(histBitmap, "灰度直方图"));
 
 
 
-            Mat edges2 = Utility.procCannyCheck(threMat, 0.5, 1, false);
-            Bitmap bitmap6 = Bitmap.createBitmap(edges.width(), edges.height(), Config.RGB_565);
-            Utils.matToBitmap(edges2, bitmap6);
-            imageResults.add(new ImageDesp(bitmap6, "边缘检测图像"));
-
-            Mat circles = Utility.procSrc2CircleSrc(edges);
-            Mat subMat1 = Utility.getSubImg(grayMat, circles);
-            Bitmap bitmap7 = Bitmap.createBitmap(subMat1.width(), subMat1.height(), Config.RGB_565);
-            Utils.matToBitmap(subMat1, bitmap7);
-            imageResults.add(new ImageDesp(bitmap7, "Hough圆形检测"));
-
-
-
-            circles = Utility.procSrc2CircleSrc(edges2);
-            Mat subMat2 = Utility.getSubImg(grayMat, circles);
-            Bitmap bitmap8 = Bitmap.createBitmap(subMat2.width(), subMat2.height(), Config.RGB_565);
-            Utils.matToBitmap(subMat2, bitmap8);
-            imageResults.add(new ImageDesp(bitmap8, "Hough圆形检测,边缘检测"));
-
-
-            Mat polarMat = Utility.procLinearPolar(subMat2);
-
-            Bitmap bitmap9 = Bitmap.createBitmap(polarMat.width(), polarMat.height(), Config.RGB_565);
-            Utils.matToBitmap(polarMat, bitmap9);
-            imageResults.add(new ImageDesp(bitmap9, "图像展开"));
-
-
-            List<Mat> gaborMatList = Utility.procGabor(polarMat, 2*Math.PI, Math.PI*(0.5+0.125), CvType.CV_32F);
-
-//            for(Mat mat: gaborMatList){
-                Bitmap bitmap10 = Bitmap.createBitmap(gaborMatList.get(1).width(),
-                        gaborMatList.get(1).height(),
-                        Config.RGB_565);
-                Utils.matToBitmap(gaborMatList.get(2), bitmap10);
-                imageResults.add(new ImageDesp(bitmap10, "Gabor"));
-//            }
+//
+//            Mat edges = Utility.procCannyCheck(threMat, 0.3, 20, false);
+//            Bitmap bitmap5 = Bitmap.createBitmap(edges.width(), edges.height(), Config.RGB_565);
+//            Utils.matToBitmap(edges, bitmap5);
+//            imageResults.add(new ImageDesp(bitmap5, "边缘检测图像"));
+//
+//
+//
+//            Mat edges2 = Utility.procCannyCheck(threMat, 0.5, 1, false);
+//            Bitmap bitmap6 = Bitmap.createBitmap(edges.width(), edges.height(), Config.RGB_565);
+//            Utils.matToBitmap(edges2, bitmap6);
+//            imageResults.add(new ImageDesp(bitmap6, "边缘检测图像"));
+//
+//            Mat circles = Utility.procSrc2CircleSrc(edges);
+//            Mat subMat1 = Utility.getSubImg(grayMat, circles);
+//            Bitmap bitmap7 = Bitmap.createBitmap(subMat1.width(), subMat1.height(), Config.RGB_565);
+//            Utils.matToBitmap(subMat1, bitmap7);
+//            imageResults.add(new ImageDesp(bitmap7, "Hough圆形检测"));
+//
+//
+//
+//            circles = Utility.procSrc2CircleSrc(edges2);
+//            Mat subMat2 = Utility.getSubImg(grayMat, circles);
+//            Bitmap bitmap8 = Bitmap.createBitmap(subMat2.width(), subMat2.height(), Config.RGB_565);
+//            Utils.matToBitmap(subMat2, bitmap8);
+//            imageResults.add(new ImageDesp(bitmap8, "Hough圆形检测,边缘检测"));
+//
+//
+//            Mat polarMat = Utility.procLinearPolar(subMat2);
+//
+//            Bitmap bitmap9 = Bitmap.createBitmap(polarMat.width(), polarMat.height(), Config.RGB_565);
+//            Utils.matToBitmap(polarMat, bitmap9);
+//            imageResults.add(new ImageDesp(bitmap9, "图像展开"));
+//
+//
+//            List<Mat> gaborMatList = Utility.procGabor(polarMat, 2*Math.PI, Math.PI*(0.5+0.125), CvType.CV_32F);
+//
+////            for(Mat mat: gaborMatList){
+//                Bitmap bitmap10 = Bitmap.createBitmap(gaborMatList.get(1).width(),
+//                        gaborMatList.get(1).height(),
+//                        Config.RGB_565);
+//                Utils.matToBitmap(gaborMatList.get(3), bitmap10);
+//                imageResults.add(new ImageDesp(bitmap10, "Gabor"));
+////            }
 
 
 

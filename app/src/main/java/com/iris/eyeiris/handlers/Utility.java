@@ -19,8 +19,7 @@ import org.opencv.features2d.FeatureDetector;
 import org.opencv.imgproc.Imgproc;
 
 
-
-
+import java.lang.reflect.Type;
 import java.net.DatagramSocketImpl;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +30,95 @@ import java.util.List;
 public class Utility {
 
     private static final String TAG = "GRAYFY";
+
+    public static Mat procHistogram(Mat src) {
+        try {
+            Mat dist = new Mat();
+
+            List<Mat> srcList = new ArrayList<Mat>();
+            srcList.add(src);
+
+            MatOfInt channels = new MatOfInt(0);
+
+            MatOfInt histSize = new MatOfInt(255);
+
+            MatOfFloat ranges = new MatOfFloat(0,255);
+
+            Imgproc.calcHist(
+                    srcList,
+                    channels,
+                    new Mat(),
+                    dist,
+                    histSize,
+                    ranges,
+                    false
+            );
+            //找到直方图中的最大最小值
+
+            float maxHistValue = 100;
+
+            Mat histMat = new Mat(new Size(maxHistValue, 256), CvType.CV_8U);
+
+            float maxValue = 0;
+            for(int i=0; i<256; i++) {
+                float value[] = new float[1];
+                dist.get(0, i, value);
+                if(maxValue<value[0])
+                    maxValue = value[0];
+//                int height = value[0]<=100? (int)(value[0]): 100;
+//
+//                Imgproc.rectangle(histMat,
+//                        new Point(i, height),
+//                        new Point(i+1, 0),
+//                        new Scalar(255,255,255)
+//                );
+
+            }
+
+
+            for(int i=0; i<256; i++) {
+                if(maxValue<=0) break;
+
+                float value[] = new float[1];
+                dist.get(0, i, value);
+                int height = (int)(value[0]/maxValue*maxHistValue);
+
+                Imgproc.rectangle(histMat,
+                        new Point(i, height),
+                        new Point(i+1, 0),
+                        new Scalar(255,255,255)
+                );
+            }
+
+            Log.d(TAG, "最大值:"+maxValue);
+            return histMat;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG, "灰度直方图失败");
+            return null;
+        } finally {
+            Log.i(TAG, "灰度直方图计算完成！");
+        }
+    }
+
+
+
+    public static Mat procAdaptiveThreshold(Mat src) {
+        try{
+            Mat dst = new Mat();
+            Imgproc.adaptiveThreshold(src, dst, 255,
+                    Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,
+                    Imgproc.THRESH_BINARY,
+                    3,
+                    5);
+            return dst;
+        } catch (Exception e) {
+            return null;
+        } finally {
+
+        }
+    }
 
     public static Mat procSrc2Gray(Bitmap srcBitmap){
 
@@ -114,7 +202,7 @@ public class Utility {
             Imgproc.linearPolar(src, dist,
                     new Point(src.width() / 2.0, src.height() / 2.0),
                     src.width() / 2.0,
-                    Imgproc.WARP_FILL_OUTLIERS);
+                    Imgproc.INTER_LINEAR);
 
             return dist;
         } catch (Exception e) {
