@@ -57,40 +57,30 @@ public class Utility {
 
             float maxHistValue = 100;
 
-            Mat histMat = new Mat(new Size(maxHistValue, 256), CvType.CV_8U);
+            Mat histMat = new Mat(new Size(256*2, maxHistValue*2), CvType.CV_8U);
 
+            int count = 0;
             float maxValue = 0;
-            for(int i=0; i<256; i++) {
-                float value[] = new float[1];
-                dist.get(0, i, value);
-                if(maxValue<value[0])
-                    maxValue = value[0];
-//                int height = value[0]<=100? (int)(value[0]): 100;
-//
-//                Imgproc.rectangle(histMat,
-//                        new Point(i, height),
-//                        new Point(i+1, 0),
-//                        new Scalar(255,255,255)
-//                );
+            float value[] = new float[256];
+            dist.get(0, 0, value);
 
+
+            //获取最大值
+            for(int i=0; i<256; i++) {
+                if(maxValue<value[i])
+                    maxValue = value[i];
             }
 
-
-            for(int i=0; i<256; i++) {
-                if(maxValue<=0) break;
-
-                float value[] = new float[1];
-                dist.get(0, i, value);
-                int height = (int)(value[0]/maxValue*maxHistValue);
-
+            //绘制直方图
+            for (int i=0; i<256; i++) {
                 Imgproc.rectangle(histMat,
-                        new Point(i, height),
-                        new Point(i+1, 0),
+                        new Point(2*i, 2*maxHistValue-value[i]/maxValue*maxHistValue*2),
+                        new Point(2*i+2, 2*maxHistValue),
                         new Scalar(255,255,255)
                 );
             }
 
-            Log.d(TAG, "最大值:"+maxValue);
+            Log.d(TAG, "最大值:"+maxValue+", counter"+count);
             return histMat;
 
         } catch (Exception e) {

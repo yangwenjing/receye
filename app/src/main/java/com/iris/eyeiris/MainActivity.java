@@ -154,7 +154,12 @@ public class MainActivity extends Activity {
             Mat hist = Utility.procHistogram(grayMat);
             Bitmap histBitmap = Bitmap.createBitmap(hist.width(), hist.height(), Config.RGB_565);
             Utils.matToBitmap(hist, histBitmap);
-            imageResults.add(new ImageDesp(histBitmap, "灰度直方图"));
+
+            ImageView imageView = (ImageView) findViewById(R.id.histogram);
+
+            imageView.setImageBitmap(histBitmap);
+
+
 
 
 
