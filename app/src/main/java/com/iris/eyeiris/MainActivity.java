@@ -13,6 +13,8 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -160,6 +162,9 @@ public class MainActivity extends Activity {
             imageView.setImageBitmap(histBitmap);
 
 
+            Drawable drawable = new BitmapDrawable(histBitmap);
+            
+
 
 
 
@@ -236,7 +241,6 @@ public class MainActivity extends Activity {
             Log.i(TAG, "Gabor整体处理完成");
             loadImages();
         }
-
 
     }
 
