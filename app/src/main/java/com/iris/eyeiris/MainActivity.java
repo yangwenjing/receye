@@ -163,7 +163,7 @@ public class MainActivity extends Activity {
 
 
             Drawable drawable = new BitmapDrawable(histBitmap);
-            
+
 
 
 
